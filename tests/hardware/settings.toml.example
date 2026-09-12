@@ -8,3 +8,8 @@ OPEN_WIFI_SSID = ""
 
 # DNS target; ping the DHCP gateway so public ICMP filtering is irrelevant.
 DNS_TEST_HOST = "example.com"
+
+# Phase 4 TCP/UDP acceptance targets and capacity stress count.
+HTTP_TEST_HOST = "example.com"
+NTP_TEST_HOST = "pool.ntp.org"
+SOCKET_CYCLES = 100

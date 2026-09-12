@@ -16,10 +16,12 @@ static int count(uint8_t c) {
     switch (c) {
     case 0x10: case 0x16: case 0x21: case 0x22: case 0x32: case 0x33:
     case 0x34: case 0x3c: case 0x3d: case 0x23: case 0x24: case 0x25: case 0x26: return 1;
-    case 0x11: case 0x3e: case 0x44: case 0x45: case 0x46: return 2;
-    case 0x14: return 4;
+    case 0x2c: case 0x11: case 0x3e: case 0x44: case 0x45: case 0x46: return 2;
+    case 0x14: case 0x2d: return 4;
+    case 0x28: return 3;
+    case 0x2a: case 0x2b: case 0x2e: case 0x2f: case 0x39: case 0x3a: return 1;
     case 0x15: return 3;
-    case 0x20: case 0x27:
+    case 0x3f: case 0x20: case 0x27:
     case 0x30: case 0x35: case 0x36: case 0x37: return 0;
     default: return -1;
     }
@@ -29,6 +31,8 @@ nina_parse_result nina_protocol_parse(const uint8_t *p, size_t n, nina_request *
         p[0] != 0xe0 || (p[1] & 0x80)) return NINA_PARSE_INVALID;
     int expected = count(p[1]);
     if (expected < 0) return NINA_PARSE_UNKNOWN;
+    if (p[1] == 0x2d && p[2] == 5) expected = 5;
+    if (p[1] == 0x28 && p[2] == 4) expected = 4;
     if (p[2] != expected) return NINA_PARSE_INVALID;
     memset(r, 0, sizeof(*r));
     r->command = p[1]; r->count = p[2];
@@ -56,6 +60,18 @@ nina_parse_result nina_protocol_parse(const uint8_t *p, size_t n, nina_request *
     case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26:
     case 0x32: case 0x33: case 0x3c: case 0x3d:
         valid = sized(r, 0, 1); break;
+    case 0x28: case 0x2d: {
+        unsigned base = r->count - (r->command == 0x2d ? 4 : 3);
+        valid = true;
+        if (base) valid = r->command == 0x2d ? (string(r, 0, 255) && r->params[0].length) : sized(r, 0, 4);
+        if (r->command == 0x2d) { valid = valid && sized(r, base, 4); ++base; }
+        valid = valid && sized(r, base, 2) && sized(r, base + 1, 1) &&
+            r->params[base + 1].data[0] < NINA_MAX_SOCKETS && sized(r, base + 2, 1);
+        break;
+    }
+    case 0x2a: case 0x2b: case 0x2c: case 0x2e: case 0x2f: case 0x39: case 0x3a:
+        valid = sized(r, 0, 1) && r->params[0].data[0] < NINA_MAX_SOCKETS &&
+            (r->command != 0x2c || sized(r, 1, 1)); break;
     case 0x3e: valid = sized(r, 0, 4) && sized(r, 1, 1); break;
     case 0x44: case 0x45: case 0x46:
         valid = sized(r, 0, 1) && r->params[0].data[0] < NINA_MAX_SOCKETS &&

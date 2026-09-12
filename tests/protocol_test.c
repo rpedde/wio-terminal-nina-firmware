@@ -191,8 +191,10 @@ static void fuzz(void) {
         }
     }
 }
+void socket_tests(void);
 int main(void) {
+    socket_tests();
     vectors(); parser_bounds(); scans(); dhcp(); fuzz();
-    puts("23 stock-driver golden vectors, bounds, backend failures, scan generations, DHCP and fuzz passed");
+    puts("39 stock-driver golden vectors, socket lifecycle, bounds, backend failures, scan generations, DHCP and fuzz passed");
     return 0;
 }

@@ -15,9 +15,9 @@ class ProtocolTests(unittest.TestCase):
             subprocess.run([
                 'cc', '-std=c11', '-O1', '-g', '-Wall', '-Wextra', '-Werror',
                 '-fsanitize=address,undefined', '-fno-omit-frame-pointer', '-no-pie',
-                '-I' + str(ROOT / 'src/nina'), str(ROOT / 'tests/protocol_test.c'),
+                '-I' + str(ROOT / 'src/nina'), str(ROOT / 'tests/protocol_test.c'), str(ROOT / 'tests/socket_mock.c'),
                 *[str(ROOT / 'src/nina' / name) for name in (
-                    'nina_protocol.c', 'nina_server.c', 'nina_wifi.c', 'nina_dhcp.c')],
+                    'nina_protocol.c', 'nina_server.c', 'nina_wifi.c', 'nina_dhcp.c', 'nina_sockets.c')],
                 '-o', binary,
             ], check=True)
             subprocess.run([binary], check=True, env=dict(

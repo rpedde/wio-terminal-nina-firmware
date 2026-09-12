@@ -525,10 +525,15 @@ unrun; see `PHASE3.md` for the exact coverage and evidence.
 
 ### Phase 4: TCP and UDP
 
-- Add socket allocation/state management.
-- Implement TCP connect/send/receive/close and UDP destination/bind/accumulate/send/receive.
+- [x] Add socket allocation/state management.
+- [x] Implement TCP connect/send/receive/close and UDP destination/bind/accumulate/send/receive.
+- [x] Add stock-driver fixtures, mock lifecycle tests and live loopback tests.
+- [x] Validate HTTP/NTP and socket exhaustion/reuse on the physical Wio.
 
 Gate: HTTP and NTP tests pass, including socket exhaustion and reuse.
+Passed on 2026-09-12 with stock CircuitPython 10.3.0 and ESP32SPI 11.1.4,
+including 100 TCP transfer/close cycles and the transport regression.
+See `PHASE4.md` for results and remaining broader acceptance coverage.
 
 ### Phase 5: Verified TLS
 
