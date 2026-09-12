@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+image=seeed-ambd-toolchain:baseline-1
+fail() { echo "fw: $*" >&2; exit 1; }
+usage() {
+    echo 'Usage: ./fw image [--no-cache] | build | test | shell'
+    echo '       ./fw flash-rtl --port /dev/ttyACM0'
+    echo '       ./fw erase-rtl --port /dev/ttyACM0 --confirm-erase'
+    echo '       ./fw install-circuitpython --mount PATH --uf2 FILE'
+    echo '       ./fw clean'
+}
+command=${1:-help}
+shift || true
+case "$command" in
+    help|--help|-h) usage; exit 0 ;;
+    image)
+        args=()
+        if [[ ${1:-} == --no-cache ]]; then args+=(--no-cache); shift; fi
+        [[ $# == 0 ]] || fail 'Unexpected image arguments'
+        exec docker build --platform linux/amd64 "${args[@]}" -t "$image" -f "$root/tools/Dockerfile" "$root" ;;
+    install-circuitpython)
+        mount= uf2=
+        while [[ $# != 0 ]]; do
+            case "$1" in
+                --mount) [[ $# -ge 2 ]] || fail 'Missing mount'; mount=$2; shift 2 ;;
+                --uf2) [[ $# -ge 2 ]] || fail 'Missing UF2'; uf2=$2; shift 2 ;;
+                *) fail "Unexpected argument: $1" ;;
+            esac
+        done
+        [[ -n $mount && -n $uf2 && -f $uf2 ]] || fail 'Explicit mount and existing UF2 are required'
+        [[ -f $mount/INFO_UF2.TXT ]] || fail 'Mount lacks INFO_UF2.TXT'
+        grep -Eiq 'SAMD51|Wio[ _-]?Terminal' "$mount/INFO_UF2.TXT" || fail 'Not a Wio/SAMD51 bootloader volume'
+        [[ $(od -An -tx1 -N8 "$uf2" | tr -d ' \n') == 5546320a57515d9e ]] || fail 'Invalid UF2 magic'
+        [[ $(stat -c %s "$uf2") -ge 512 && $(( $(stat -c %s "$uf2") % 512 )) == 0 ]] || fail 'Invalid UF2 length'
+        cp -- "$uf2" "$mount/$(basename -- "$uf2")"
+        sync
+        echo 'UF2 copied. Wait for the board to restart.'
+        exit 0 ;;
+    clean)
+        [[ $# == 0 ]] || fail 'Unexpected clean arguments'
+        # Keep prior artifacts recoverable; never remove source or caches.
+        if [[ -e $root/dist ]]; then
+            backup=$(mktemp -d "$root/.dist-backup.XXXXXX")
+            mv -- "$root/dist" "$backup/dist"
+            echo "Previous artifacts moved to $backup/dist"
+        fi
+        exit 0 ;;
+    build|test|shell) [[ $# == 0 ]] || fail 'Unexpected arguments' ;;
+    flash-rtl|erase-rtl)
+        port= confirmed=false
+        while [[ $# != 0 ]]; do
+            case "$1" in
+                --port) [[ $# -ge 2 ]] || fail 'Missing port'; port=$2; shift 2 ;;
+                --confirm-erase) confirmed=true; shift ;;
+                *) fail "Unexpected argument: $1" ;;
+            esac
+        done
+        [[ $port =~ ^/dev/tty(ACM|USB)[0-9]+$ && -c $port ]] || fail 'Specify an existing /dev/ttyACM or /dev/ttyUSB character device'
+        [[ $command != erase-rtl || $confirmed == true ]] || fail 'Erase requires --confirm-erase'
+        if [[ $command == flash-rtl ]]; then
+            [[ -s $root/dist/build-manifest.json ]] || fail 'No completed build manifest; run ./fw build'
+            for file in km0_boot_all.bin km4_boot_all.bin km0_km4_image2.bin; do
+                [[ -s $root/dist/firmware/$file ]] || fail "Missing dist/firmware/$file; run ./fw build"
+            done
+        fi ;;
+    *) usage >&2; fail "Unknown command: $command" ;;
+esac
+mkdir -p "$root/dist"
+args=(--rm --platform linux/amd64 --network none --user "$(id -u):$(id -g)"
+      --mount "type=bind,src=$root,dst=/source,readonly"
+      --mount "type=bind,src=$root/dist,dst=/dist")
+if [[ $command == shell ]]; then args+=(-it); fi
+if [[ $command == flash-rtl || $command == erase-rtl ]]; then
+    args+=(--device "$port:$port" --group-add "$(stat -c %g "$port")" -e "FW_PORT=$port")
+    echo 'The SAMD51 may contain the temporary Seeed bridge after this operation. Restore CircuitPython afterward.'
+fi
+revision=$(git -C "$root" rev-parse HEAD)
+dirty=false
+[[ -z $(git -C "$root" status --porcelain --untracked-files=normal) ]] || dirty=true
+exec docker run "${args[@]}" -e "FW_REVISION=$revision" -e "FW_DIRTY=$dirty" "$image" "$command"

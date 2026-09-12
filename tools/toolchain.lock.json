@@ -1,0 +1,43 @@
+{
+  "baseline_revision": "7334817a6fcf311fbe3c9a8c5644b805ae12bdab",
+  "board": "realtek:AmebaD:ameba_rtl8721d",
+  "board_package_version": "3.0.5",
+  "ubuntu": "ubuntu:22.04@sha256:281c5745f657873d78e5531fc5ba8575f46ab7769b94550ac99543f122679986",
+  "core_revision": "f81bca75e433e35b2d27cadd178596888940fb5a",
+  "flash_revision": "de56db9716f9cbf5641fe6e440b1c96033c41962",
+  "arduino_cli_version": "0.35.3",
+  "archives": {
+    "ctags": {
+      "url": "https://downloads.arduino.cc/tools/ctags-5.8-arduino11-pm-x86_64-pc-linux-gnu.tar.bz2",
+      "sha256": "62b514f3aaf37b5429ef703853bb46365fb91b4754c1916d085bf134004886e3"
+    },
+    "serial-discovery": {
+      "url": "https://downloads.arduino.cc/discovery/serial-discovery/serial-discovery_v1.4.3_Linux_64bit.tar.gz",
+      "sha256": "915ebe1cd94cb0a13411833fa2ee28718cb9cb75ac2053d3e51642d0f27d9990"
+    },
+    "mdns-discovery": {
+      "url": "https://downloads.arduino.cc/discovery/mdns-discovery/mdns-discovery_v1.0.9_Linux_64bit.tar.gz",
+      "sha256": "a4bf9e46a15487ec729f98c23f05b2d772feaa82789c1d12a485be9acb77b48a"
+    },
+    "cli": {
+      "url": "https://downloads.arduino.cc/arduino-cli/arduino-cli_0.35.3_Linux_64bit.tar.gz",
+      "sha256": "acf3a3e03f0478a1cade44d23d4bc2f979c9b61b64e13bc66e26220b7b9fbd23"
+    },
+    "core": {
+      "url": "https://codeload.github.com/Seeed-Studio/ArduinoCore-ambd/tar.gz/f81bca75e433e35b2d27cadd178596888940fb5a",
+      "sha256": "e8222b9283fc5eb53ce19942866350b9579bfeff7faa7257a9aeb5c8879c0e09"
+    },
+    "compiler": {
+      "url": "https://files.seeedstudio.com/arduino/core/ambd/ameba_d_toolchain_linux_64-1.0.1.tar.bz2",
+      "sha256": "340ab2af5100102f7a1f5ba89b3490a843fa2aed05276427f5cc6c6c01032cd7"
+    },
+    "tools": {
+      "url": "https://files.seeedstudio.com/arduino/core/ambd/ameba_d_tools_linux-1.0.4.tar.gz",
+      "sha256": "053fc5ba3897438e43c3031bfb8b77982d1d68e643b0b7466d3c26159fdeafad"
+    },
+    "flash": {
+      "url": "https://codeload.github.com/Seeed-Studio/ambd_flash_tool/tar.gz/de56db9716f9cbf5641fe6e440b1c96033c41962",
+      "sha256": "cfeae85e91e8f0eab4251fef253c758b177279973bef7823d555f88b5b295200"
+    }
+  }
+}
