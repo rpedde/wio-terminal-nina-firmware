@@ -103,16 +103,30 @@ void nina_transport_poll(uint32_t now_ms)
         if (!nina_hw_selected()) arm(false, now_ms);
     } else if (state == TX_DONE) {
         arm(false, now_ms);
-    } else if (state == RX_DONE) {
-        state = PROCESSING;
-        memset(tx, 0, sizeof(tx));
-        response_length = responder(rx, received, tx, &counters);
-        if (!response_length || response_length > NINA_SPI_BUFFER_SIZE) {
-            abort_transfer();
-        } else {
-            arm(true, now_ms);
-        }
     }
+}
+
+bool nina_transport_begin_request(void)
+{
+    if (state != RX_DONE) return false;
+    state = PROCESSING;
+    return true;
+}
+
+size_t nina_transport_dispatch(void)
+{
+    memset(tx, 0, sizeof(tx));
+    return responder(rx, received, tx, &counters);
+}
+
+void nina_transport_finish_request(size_t length, uint32_t now_ms)
+{
+    /* Unexpected CS edges during a slow command invalidate its response.
+     * The ISR stops hardware but cannot rearm/overwrite the request buffer. */
+    if (state != PROCESSING) return;
+    response_length = length;
+    if (!length || length > NINA_SPI_BUFFER_SIZE) abort_transfer();
+    else arm(true, now_ms);
 }
 
 void nina_transport_snapshot(nina_transport_counters *out)

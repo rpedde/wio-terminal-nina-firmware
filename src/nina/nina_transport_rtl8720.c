@@ -1,4 +1,4 @@
-/* All Realtek/FreeRTOS dependencies of the SPI proof live here. */
+/* Realtek/FreeRTOS backend for the SPI transport. */
 #include "ameba_soc.h"
 #include "rtl8721d_usi_ssi.h"
 #include "FreeRTOS.h"
@@ -178,12 +178,18 @@ static void transport_task(void *unused)
     bool first = true;
 #endif
     for (;;) {
-        /* CS IRQ is priority 5, masked by this short critical section. Phase 2
-         * responder just copies literals; no blocking backend work is allowed.
-         * DMA continues independently while the task sleeps. */
+        /* Mask CS only while changing transport state. Network calls must
+         * run with interrupts and the FreeRTOS scheduler enabled. */
         taskENTER_CRITICAL();
         nina_transport_poll(milliseconds(false));
+        bool pending = nina_transport_begin_request();
         taskEXIT_CRITICAL();
+        if (pending) {
+            size_t length = nina_transport_dispatch();
+            taskENTER_CRITICAL();
+            nina_transport_finish_request(length, milliseconds(false));
+            taskEXIT_CRITICAL();
+        }
 #ifdef NINA_TRANSPORT_DEBUG
         if (first) { NINA_TRACE("NINA polled CS=%x READY=%x\n", GPIO_ReadDataBit(NINA_CS), GPIO_ReadDataBit(NINA_READY)); first = false; }
 #endif

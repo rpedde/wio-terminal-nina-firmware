@@ -3,3 +3,4 @@ debug.log
 dist/
 __pycache__/
 .dist-backup.*/
+settings.toml

@@ -16,6 +16,9 @@ def run(*args, **kwargs):
 
 
 def build(work):
+    country = os.environ.get('WIFI_COUNTRY', 'US')
+    if country not in ('US', 'CA', 'GB', 'DE', 'FR', 'AU', 'JP'):
+        raise RuntimeError('WIFI_COUNTRY must be US, CA, GB, DE, FR, AU, or JP')
     manifest_path = Path('/dist/build-manifest.json')
     if manifest_path.exists():
         manifest_path.replace('/dist/build-manifest.previous.json')
@@ -25,12 +28,22 @@ def build(work):
     # Vendor postbuild tools write into their own installation directory.
     data = work / 'arduino'
     shutil.copytree('/opt/arduino', data)
+    core = data / 'packages/realtek/hardware/AmebaD/3.0.5'
+    # Preserve every vendor linker flag; add only the two DHCP send hooks.
+    platform = core / 'platform.txt'
+    platform_text = platform.read_text()
+    marker = 'compiler.c.elf.extra_flags='
+    if platform_text.count(marker) != 1:
+        raise RuntimeError('Pinned platform linker flags changed')
+    platform.write_text(platform_text.replace(marker, marker +
+        '-Wl,--wrap=udp_sendto_if -Wl,--wrap=udp_sendto_if_src '))
     os.environ['ARDUINO_DIRECTORIES_DATA'] = str(data)
     os.environ['ARDUINO_DIRECTORIES_DOWNLOADS'] = str(work / 'downloads')
     os.environ['ARDUINO_DIRECTORIES_USER'] = str(work / 'user')
     output = work / 'build'
     includes = ' '.join(f'-I{sketch}/src/{name}' for name in (
         'easylogger', 'easylogger/inc', 'ble', 'wifi', 'esp_lib', 'erpc', 'erpc_shim', 'mDNS'))
+    includes += f' -DWIFI_COUNTRY=RTW_COUNTRY_{country}'
     with Path('/dist/build.log').open('w') as log:
         result = subprocess.run(['arduino-cli', 'compile', '--fqbn', LOCK['board'],
             '--build-path', str(output), '--build-property', f'build.extra_flags={includes}',
@@ -66,7 +79,7 @@ def build(work):
     hashes = {name: hashlib.sha256((firmware / name).read_bytes()).hexdigest() for name in IMAGES}
     manifest = dict(LOCK, git_revision=os.environ['FW_REVISION'],
         dirty=os.environ['FW_DIRTY'] == 'true', firmware_version='3.3.0+rtl8720.1',
-        firmware_protocol='NINA SPI proof (status/version only)', country='not applicable (phase 2; Wi-Fi disabled)',
+        firmware_protocol='NINA SPI phase 3 (protocol and station Wi-Fi)', country=country,
         certificate_bundle_sha256=None, artifacts=hashes,
         sizes=sizes,
         system_packages_sha256=hashlib.sha256(Path('/opt/fw-tools/system-packages.lock').read_bytes()).hexdigest(),

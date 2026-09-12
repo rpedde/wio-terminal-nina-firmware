@@ -1,10 +1,12 @@
 # Seeed RTL872X RPC firmware  [![Build Status](https://travis-ci.com/Seeed-Studio/seeed-ambd-firmware.svg?branch=master)](https://travis-ci.com/Seeed-Studio/seeed-ambd-firmware)
 
-## Docker workflow and phase 2 SPI proof
+## Docker workflow and phase 3 Wi-Fi control
 
-The NINA port in [TODO.md](plans/TODO.md) now contains the phase 2 SPI proof.
-It returns fixed firmware version and idle status replies only; networking
-is not implemented. Hardware acceptance is tracked in [PHASE2.md](plans/PHASE2.md).
+The NINA port in [TODO.md](plans/TODO.md) now implements the portable protocol
+and station Wi-Fi commands: scan, connect, status, addressing, DNS, and ping.
+Phase 3 acceptance is tracked in [PHASE3.md](plans/PHASE3.md).
+Phase 2 transport acceptance remains recorded in [PHASE2.md](plans/PHASE2.md),
+with logic-analyzer capture deferred by user decision.
 The phase 1 baseline record remains in [PHASE1.md](plans/PHASE1.md).
 
 On Linux with Docker, Bash, Git and standard coreutils:
@@ -28,12 +30,14 @@ Artifacts include `dist/firmware/{km0_boot_all,km4_boot_all,km0_km4_image2}.bin`
 `firmware.elf`, `firmware.map`, `size.txt`, `size.json`, `build.log`, `SHA256SUMS`, and
 `build-manifest.json`. Paths after the firmware directory are relative to
 `dist/`. The manifest records the source revision/dirty state, locked toolchain,
-compiler version and artifact hashes. Country and certificate metadata are
-explicitly marked as not applicable until their NINA phases.
+compiler version, country, and artifact hashes. Certificate metadata remains
+unset until phase 5. Country defaults to US; select a different compile-time
+plan with `WIFI_COUNTRY=GB ./fw build`. Supported values are US, CA, GB, DE,
+FR, AU, and JP. Changing the country requires rebuilding and reflashing.
 
-`./fw test` runs workflow checks, native SPI transport fault tests under
-ASan/UBSan, and validates completed build artifacts. Hardware tests require
-the separate procedure in PHASE2.md. CI also builds the image and firmware
+`./fw test` runs workflow checks, native protocol/dispatcher/transport tests
+and fuzz cases under ASan/UBSan, and validates completed build artifacts.
+Hardware tests require the separate procedure in PHASE3.md. CI also builds the image and firmware
 and checks that tracked sources remain unchanged.
 
 To flash a connected Wio Terminal, explicitly choose its serial device:
@@ -61,8 +65,11 @@ and restore your explicitly supplied CircuitPython UF2:
 
 This is a host-side copy; the command checks the bootloader's `INFO_UF2.TXT`
 and UF2 header/length. It does not download or select a CircuitPython build.
-Use the stock ESP32SPI 11.1.4 driver with the phase 2 hardware test script.
-This proof supports only status/version; Wi-Fi and sockets require later phases.
+Use the stock ESP32SPI 11.1.4 driver with `tests/hardware/phase3_wifi.py`.
+Copy `tests/hardware/settings.toml.example` to `CIRCUITPY/settings.toml` and
+fill in the local credentials. `DNS_TEST_HOST` is a hostname to resolve;
+DNS server addresses normally come from DHCP. TCP/UDP sockets and TLS are
+reserved for phases 4 and 5.
 
 `./fw shell` opens a disposable toolchain shell. `./fw clean` moves `dist/`
 into a recoverable, ignored `.dist-backup.*` directory and prints its location.

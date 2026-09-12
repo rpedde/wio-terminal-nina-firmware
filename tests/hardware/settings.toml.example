@@ -1,0 +1,10 @@
+# Copy to CIRCUITPY/settings.toml and fill in your local values.
+# Keep the real settings.toml off Git and do not paste passwords into logs.
+WIFI_SSID = ""
+WIFI_PASSWORD = ""
+
+# Optional separate open test AP. Leave empty to skip the open-network gate.
+OPEN_WIFI_SSID = ""
+
+# DNS target; ping the DHCP gateway so public ICMP filtering is irrelevant.
+DNS_TEST_HOST = "example.com"

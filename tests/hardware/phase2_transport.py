@@ -42,4 +42,4 @@ for i in range(10000):
         print("PHASE2 mixed progress:", i + 1)
 print("PHASE2 PASS mixed: 10000/10000")
 print("PHASE2 automated checks passed in", time.monotonic() - started, "seconds")
-print("Logic-analyzer ordering and clock verification are a separate required gate.")
+print("Logic-analyzer capture remains deferred by user decision; no trace is claimed.")

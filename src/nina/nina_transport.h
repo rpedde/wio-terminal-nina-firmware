@@ -23,9 +23,14 @@ bool nina_transport_start(nina_response_fn respond);
 void nina_transport_get_counters(nina_transport_counters *out);
 
 /* Platform-independent engine. Platform serializes poll/edge/snapshot calls.
- * The handler runs only from poll (task context), never from the CS ISR. */
+ * The handler runs only from dispatch (task context), never from the CS ISR. */
 void nina_transport_init(nina_response_fn respond);
 void nina_transport_poll(uint32_t now_ms);
+/* begin/finish run under the platform's CS critical section; dispatch runs
+ * outside it, with scheduling enabled. No poll/rearm until finish returns. */
+bool nina_transport_begin_request(void);
+size_t nina_transport_dispatch(void);
+void nina_transport_finish_request(size_t length, uint32_t now_ms);
 void nina_transport_cs_edge(bool selected, uint32_t now_ms);
 
 /* Backend contract. stop freezes DMA and returns actual clocks received,

@@ -171,10 +171,15 @@ byte 1        command ID, reply bit clear
 byte 2        parameter count
 parameters    length followed by parameter data
 trailer       0xEE END_CMD
-padding       zero bytes to a four-byte transaction boundary
+padding       bytes to a four-byte transaction boundary (ignored on receive)
 ```
 
 Most commands use an unsigned eight-bit parameter length. Commands `0x44`, `0x45`, and `0x46` use unsigned 16-bit big-endian parameter lengths in requests. The data response from `0x45` also uses a 16-bit big-endian parameter length.
+
+ESP32SPI 11.1.4 reuses its send buffer without clearing padding. Accept the
+one-to-three alignment bytes after `END_CMD` regardless of their value;
+reject extra full words. Replies always have zero padding. Commands `0x21`
+through `0x26` carry one dummy one-byte request parameter in the stock driver.
 
 ### Successful response
 
@@ -506,11 +511,17 @@ limitations and criteria for revisiting capture.
 
 ### Phase 3: Protocol and Wi-Fi control
 
-- Add the portable parser/serializer.
-- Implement status, version, connection, addressing, scanning, DNS, and ping.
-- Add native golden-vector tests.
+- [x] Add the portable parser/serializer.
+- [x] Implement status, version, connection, addressing, scanning, DNS, and ping.
+- [x] Add native golden-vector tests.
+- [x] Validate the stock-driver network gate on hardware; see `PHASE3.md`.
 
 Gate: stock ESP32SPI can scan, connect, report addressing, resolve DNS, and ping.
+Passed on 2026-09-12 using stock CircuitPython 10.3.0 and ESP32SPI 11.1.4
+with the configured WPA2 AP. Static IPv4/reconnect, explicit DNS, connection
+failure/cancellation and the phase 2 transport regression also pass.
+Separate open-AP testing and direct DHCP hostname-option inspection remain
+unrun; see `PHASE3.md` for the exact coverage and evidence.
 
 ### Phase 4: TCP and UDP
 

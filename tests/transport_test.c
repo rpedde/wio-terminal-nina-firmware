@@ -34,7 +34,11 @@ static size_t reply(const uint8_t *r, size_t n, uint8_t *t, nina_transport_count
     ++calls;
     return nina_spi_proof_reply(r, n, t, c);
 }
-static void poll(void) { nina_transport_poll(now++); }
+static void poll(void) {
+    nina_transport_poll(now++);
+    if (nina_transport_begin_request())
+        nina_transport_finish_request(nina_transport_dispatch(), now++);
+}
 static void edge(bool low)
 {
     selected = low;
@@ -169,9 +173,27 @@ static void stress(void)
     }
     check_status();
 }
+static void slow_response(void)
+{
+    init(); edge(true); memcpy(rx, "\xe0\x20\0\xee", 4); clocks = 4; edge(false);
+    nina_transport_poll(now++); assert(nina_transport_begin_request());
+    now += 4500; /* A DNS operation longer than the transport timeout. */
+    size_t length = nina_transport_dispatch();
+    nina_transport_finish_request(length, now);
+    nina_transport_poll(++now); assert(!ready && armed && !stats().timeouts);
+    consume(6); check_status();
+
+    init(); edge(true); memcpy(rx, "\xe0\x20\0\xee", 4); clocks = 4; edge(false);
+    nina_transport_poll(now++); assert(nina_transport_begin_request());
+    edge(true); /* Host violates READY while the task is processing. */
+    length = nina_transport_dispatch();
+    nina_transport_finish_request(length, now);
+    assert(ready && !armed); poll(); assert(ready && !armed);
+    edge(false); poll(); check_status();
+}
 int main(void)
 {
-    vectors(); recovery(); stress();
+    vectors(); recovery(); stress(); slow_response();
     puts("SPI proof vectors, handshake, fault recovery and stress passed");
     return 0;
 }
