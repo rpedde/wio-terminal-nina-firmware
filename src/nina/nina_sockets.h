@@ -12,6 +12,14 @@ bool nina_socket_bind_backend(int fd, uint16_t port);
 int nina_socket_send_backend(int fd, const uint8_t *data, size_t n, const uint8_t *ip, uint16_t port);
 int nina_socket_recv_backend(int fd, uint8_t *data, size_t n, bool peek, uint8_t *ip, uint16_t *port);
 int nina_socket_wait_backend(int fd, unsigned ms);
+#define NINA_MAX_TLS_SOCKETS 1
+/* TLS owns only its cryptographic state; the slot owns the descriptor. */
+void *nina_tls_open(const char *hostname, uint16_t port, int *fd, uint8_t peer[4]);
+void nina_tls_free(void *tls);
+int nina_tls_send(void *tls, const uint8_t *data, size_t n);
+int nina_tls_recv(void *tls, uint8_t *data, size_t n, bool peek);
+int nina_socket_open_timed(bool udp, const uint8_t ip[4], uint16_t port, bool bind_only, unsigned timeout);
+bool nina_sockets_connect_tls(unsigned id, const char *hostname, uint16_t port);
 bool nina_sockets_init(void);
 void nina_sockets_close_all(void);
 uint8_t nina_sockets_allocate(void);

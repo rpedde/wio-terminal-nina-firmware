@@ -1,10 +1,12 @@
 # Seeed RTL872X RPC firmware  [![Build Status](https://travis-ci.com/Seeed-Studio/seeed-ambd-firmware.svg?branch=master)](https://travis-ci.com/Seeed-Studio/seeed-ambd-firmware)
 
-## Docker workflow and phase 3 Wi-Fi control
+## Docker workflow and NINA Wi-Fi/TCP/UDP/TLS
 
 The NINA port in [TODO.md](plans/TODO.md) now implements the portable protocol
-and station Wi-Fi commands: scan, connect, status, addressing, DNS, and ping.
-Phase 3 acceptance is tracked in [PHASE3.md](plans/PHASE3.md).
+and station Wi-Fi, TCP/UDP sockets, SNTP and certificate-verified TLS.
+Phase 3/4 acceptance is tracked in [PHASE3.md](plans/PHASE3.md) and
+[PHASE4.md](plans/PHASE4.md); TLS details and acceptance are in
+[PHASE5.md](plans/PHASE5.md).
 Phase 2 transport acceptance remains recorded in [PHASE2.md](plans/PHASE2.md),
 with logic-analyzer capture deferred by user decision.
 The phase 1 baseline record remains in [PHASE1.md](plans/PHASE1.md).
@@ -30,8 +32,9 @@ Artifacts include `dist/firmware/{km0_boot_all,km4_boot_all,km0_km4_image2}.bin`
 `firmware.elf`, `firmware.map`, `size.txt`, `size.json`, `build.log`, `SHA256SUMS`, and
 `build-manifest.json`. Paths after the firmware directory are relative to
 `dist/`. The manifest records the source revision/dirty state, locked toolchain,
-compiler version, country, and artifact hashes. Certificate metadata remains
-unset until phase 5. Country defaults to US; select a different compile-time
+compiler version, country, artifact hashes and the certificate bundle hash.
+Root selection and explicit updates are documented in
+[certificates/README.md](certificates/README.md). Country defaults to US; select a different compile-time
 plan with `WIFI_COUNTRY=GB ./fw build`. Supported values are US, CA, GB, DE,
 FR, AU, and JP. Changing the country requires rebuilding and reflashing.
 
@@ -68,8 +71,10 @@ and UF2 header/length. It does not download or select a CircuitPython build.
 Use the stock ESP32SPI 11.1.4 driver with `tests/hardware/phase3_wifi.py`.
 Copy `tests/hardware/settings.toml.example` to `CIRCUITPY/settings.toml` and
 fill in the local credentials. `DNS_TEST_HOST` is a hostname to resolve;
-DNS server addresses normally come from DHCP. TCP/UDP sockets and TLS are
-reserved for phases 4 and 5.
+DNS server addresses normally come from DHCP. Run
+`tests/hardware/phase4_sockets.py` for TCP/UDP and
+`tests/hardware/phase5_tls.py` for verified HTTPS. TLS requires a hostname,
+SNTP time and a chain to an included root; only one TLS socket is supported.
 
 `./fw shell` opens a disposable toolchain shell. `./fw clean` moves `dist/`
 into a recoverable, ignored `.dist-backup.*` directory and prints its location.

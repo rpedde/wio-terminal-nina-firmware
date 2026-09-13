@@ -2,6 +2,7 @@
 #include "nina_protocol.h"
 #include "nina_wifi.h"
 #include "nina_sockets.h"
+#include "nina_time.h"
 #include <string.h>
 
 /* One transport task owns dispatch and this fixed scratch storage. */
@@ -60,6 +61,15 @@ size_t nina_server_reply(const uint8_t *data, size_t length, uint8_t *out,
         break;
     case 0x30: nina_sockets_close_all(); value[0] = nina_wifi_disconnect(); memset(resolved, 0, 4); break;
     case 0x28: case 0x2d: {
+        if (r.command == 0x2d && r.params[r.count - 1].data[0] == 2) {
+            unsigned id = r.params[r.count - 2].data[0];
+            if (r.count == 5) {
+                text_param(name, &r.params[0]);
+                value[0] = nina_sockets_connect_tls(id, name,
+                    ((uint16_t)r.params[2].data[0] << 8) | r.params[2].data[1]);
+            } else nina_sockets_close(id);
+            break;
+        }
         unsigned base = r.count - (r.command == 0x2d ? 4 : 3);
         uint8_t ip[4] = {0}; bool ok = true;
         if (r.command == 0x2d) {
@@ -89,6 +99,11 @@ size_t nina_server_reply(const uint8_t *data, size_t length, uint8_t *out,
         /* Stock ESP32SPI 11.1.4 unpacks the remote port as little endian. */
         nina_write_le16(value + 4, port);
         p[0].length = 4; p[1] = (nina_param){value + 4, 2}; count = 2; break;
+    }
+    case 0x3b: {
+        uint64_t now = (uint64_t)nina_time_now();
+        for (unsigned i = 0; i < 8; ++i) value[i] = now >> (8 * i);
+        p[0].length = 8; break;
     }
     case 0x3f: value[0] = nina_sockets_allocate(); break;
     case 0x44:

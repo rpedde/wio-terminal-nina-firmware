@@ -30,6 +30,9 @@ int nina_socket_wait_backend(int fd, unsigned ms) {
     return lwip_select(fd + 1, NULL, &writes, NULL, &timeout);
 }
 int nina_socket_open_backend(bool udp, const uint8_t ip[4], uint16_t port, bool bind_only) {
+    return nina_socket_open_timed(udp, ip, port, bind_only, 4000);
+}
+int nina_socket_open_timed(bool udp, const uint8_t ip[4], uint16_t port, bool bind_only, unsigned timeout) {
     int fd = lwip_socket(AF_INET, udp ? SOCK_DGRAM : SOCK_STREAM, 0);
     if (fd < 0) return -1;
     unsigned long nonblocking = 1;
@@ -38,7 +41,7 @@ int nina_socket_open_backend(bool udp, const uint8_t ip[4], uint16_t port, bool 
     if (bind_only) { if (lwip_bind(fd, (struct sockaddr *)&a, sizeof(a))) goto fail; }
     else if (!udp && lwip_connect(fd, (struct sockaddr *)&a, sizeof(a))) {
         if (errno != EINPROGRESS && errno != EWOULDBLOCK) goto fail;
-        if (nina_socket_wait_backend(fd, 4000) <= 0) goto fail;
+        if (nina_socket_wait_backend(fd, timeout) <= 0) goto fail;
         int error = 0; socklen_t size = sizeof(error);
         if (lwip_getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &size) || error) goto fail;
     }

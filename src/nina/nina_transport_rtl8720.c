@@ -249,7 +249,7 @@ bool nina_transport_start(nina_response_fn respond)
                       NINA_IRQ_PRIORITY);
     InterruptEn(GPIOA_IRQ, NINA_IRQ_PRIORITY);
     GPIO_INTConfig(NINA_CS, ENABLE);
-    if (xTaskCreate(transport_task, "nina_spi", 1024, NULL,
+    if (xTaskCreate(transport_task, "nina_spi", 4096, NULL,
                     tskIDLE_PRIORITY + 3, NULL) != pdPASS) {
         GPIO_INTConfig(NINA_CS, DISABLE);
         GDMA_ChnlFree(0, rx_dma.GDMA_ChNum);

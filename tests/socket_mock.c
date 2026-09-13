@@ -75,4 +75,34 @@ void socket_tests(void) {
         nina_sockets_close(0);
     }
     assert(opened == closed);
+    incoming = -2;
+    assert(nina_sockets_allocate() == 0);
+    assert(nina_sockets_connect_tls(0, "example.com", 443));
+    assert(nina_sockets_state(0) == 4);
+    nina_sockets_remote(0, ip, &port); assert(port == 443 && ip[3] == 4);
+    assert(nina_sockets_allocate() == 1);
+    assert(!nina_sockets_connect_tls(1, "example.com", 443));
+    assert(nina_sockets_allocate() == 1);
+    assert(nina_sockets_write(0, data, 100) == 100);
+    nina_sockets_close_all(); assert(opened == closed);
+    failure = -1;
+    assert(nina_sockets_allocate() == 0);
+    assert(!nina_sockets_connect_tls(0, "example.com", 443));
+    assert(nina_sockets_allocate() == 0); failure = 0;
+    assert(nina_sockets_connect_tls(0, "example.com", 443));
+    nina_sockets_close_all(); assert(opened == closed);
+}
+
+int64_t nina_time_now(void) { return 1789257600LL; }
+void *nina_tls_open(const char *name, uint16_t port, int *fd, uint8_t peer[4]) {
+    (void)name; (void)port; memcpy(peer, "\1\2\3\4", 4);
+    if (failure) return NULL;
+    *fd = 10; ++opened; return (void *)1;
+}
+void nina_tls_free(void *t) { assert(t == (void *)1); }
+int nina_tls_send(void *t, const uint8_t *data, size_t n) {
+    assert(t); return nina_socket_send_backend(10, data, n, NULL, 0);
+}
+int nina_tls_recv(void *t, uint8_t *data, size_t n, bool peek) {
+    assert(t); return nina_socket_recv_backend(10, data, n, peek, NULL, NULL);
 }

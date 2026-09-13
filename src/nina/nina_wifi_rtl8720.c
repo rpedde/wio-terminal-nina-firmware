@@ -12,6 +12,7 @@
 #include "lwip/dhcp.h"
 #include "lwip/sockets.h"
 #include "nina_wifi.h"
+#include "nina_time.h"
 #include <string.h>
 
 #ifndef WIFI_COUNTRY
@@ -40,6 +41,7 @@ static void disconnected(char *data, int length, int flags, void *arg) {
     lock();
     if (!requested_disconnect && status == 3) status = 5;
     unlock();
+    nina_time_link_changed();
 }
 static void no_network(char *data, int length, int flags, void *arg) {
     (void)data; (void)length; (void)flags; (void)arg;
@@ -141,6 +143,7 @@ static void worker(void *unused) {
             busy = requested_disconnect;
             unlock();
         }
+        nina_time_link_changed();
         memset(&job, 0, sizeof(job));
     }
 }
@@ -154,6 +157,7 @@ bool nina_wifi_init(void) {
     worker_done = xSemaphoreCreateBinary();
     jobs = xQueueCreate(2, sizeof(wifi_job));
     if (!mutex || !ip_done || !dns_done || !worker_done || !jobs) return false;
+    if (!nina_time_init()) return false;
     LwIP_Init();
     if (wifi_on(RTW_MODE_STA) != RTW_SUCCESS) return false;
     wifi_set_autoreconnect(0);
@@ -180,7 +184,7 @@ bool nina_wifi_disconnect(void) {
     if (requested_disconnect) { unlock(); return true; }
     bool ok = xQueueSend(jobs, &job, 0) == pdTRUE;
     if (ok) { requested_disconnect = true; status = 6; busy = true; }
-    unlock(); return ok;
+    unlock(); nina_time_link_changed(); return ok;
 }
 uint8_t nina_wifi_status(void) { lock(); uint8_t value = status; unlock(); return value; }
 bool nina_wifi_set_ip(const uint8_t ip[4], const uint8_t gateway[4], const uint8_t mask[4]) {
@@ -255,6 +259,9 @@ static void dns_callback(void *unused) {
     if (result != ERR_INPROGRESS) dns_result(NULL, result == ERR_OK ? &dns_work.address : NULL, NULL);
 }
 bool nina_wifi_resolve(const char *name, uint8_t ip[4]) {
+    return nina_wifi_resolve_timeout(name, ip, 4000);
+}
+bool nina_wifi_resolve_timeout(const char *name, uint8_t ip[4], unsigned timeout_ms) {
     memset(ip, 0, 4);
     if (dns_work.pending) {
         if (xSemaphoreTake(dns_done, 0) != pdTRUE) return false;
@@ -265,7 +272,7 @@ bool nina_wifi_resolve(const char *name, uint8_t ip[4]) {
     if (tcpip_callback_with_block(dns_callback, NULL, 0) != ERR_OK) {
         dns_work.pending = false; return false;
     }
-    if (xSemaphoreTake(dns_done, pdMS_TO_TICKS(4000)) != pdTRUE) return false;
+    if (xSemaphoreTake(dns_done, pdMS_TO_TICKS(timeout_ms)) != pdTRUE) return false;
     dns_work.pending = false;
     if (dns_work.success) memcpy(ip, &dns_work.address.addr, 4);
     return dns_work.success;

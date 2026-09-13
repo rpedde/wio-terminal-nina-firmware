@@ -40,5 +40,9 @@ static const struct { const char *name, *request, *response; } golden[] = {
     {"udp_insert", "e046020001000003616263ee", "e0c6010101ee0000"},
     {"udp_empty_chunk", "e046020001000000ee6263ee", "e0c6010101ee0000"},
     {"udp_send", "e039010100ee0000", "e0b9010101ee0000"},
+    {"allocate_tls", "e03f00ee", "e0bf010101ee0000"},
+    {"tls_hostname", "e02d050b6578616d706c652e636f6d04000000000201bb01010102ee", "e0ad010101ee0000"},
+    {"tls_close", "e02e010101ee616d", "e0ae010101ee0000"},
+    {"get_time", "e03b00ee", "e0bb010880e7a56a00000000ee000000"},
     {"disconnect", "e03000ee", "e0b0010101ee0000"},
 };

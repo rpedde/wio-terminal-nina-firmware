@@ -30,6 +30,7 @@ void nina_wifi_current(nina_network *out);
 bool nina_wifi_scan_start(void);
 /* Copies an immutable generation, never the partially accumulated scan. */
 void nina_wifi_scan_snapshot(nina_scan *out);
+bool nina_wifi_resolve_timeout(const char *hostname, uint8_t ip[4], unsigned timeout_ms);
 bool nina_wifi_resolve(const char *hostname, uint8_t ip[4]);
 uint16_t nina_wifi_ping(const uint8_t ip[4], uint8_t ttl);
 #endif

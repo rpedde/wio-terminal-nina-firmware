@@ -195,6 +195,6 @@ void socket_tests(void);
 int main(void) {
     socket_tests();
     vectors(); parser_bounds(); scans(); dhcp(); fuzz();
-    puts("39 stock-driver golden vectors, socket lifecycle, bounds, backend failures, scan generations, DHCP and fuzz passed");
+    puts("43 stock-driver golden vectors, socket lifecycle, bounds, backend failures, scan generations, DHCP and fuzz passed");
     return 0;
 }

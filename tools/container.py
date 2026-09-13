@@ -25,6 +25,7 @@ def build(work):
     sketch = work / 'seeed-ambd-firmware'
     shutil.copytree('/source', sketch, ignore=shutil.ignore_patterns(
         '.git', '.agents', '.codex', 'dist', '.dist-backup.*', '__pycache__'))
+    run('python3', str(sketch / 'tools/check-certificates.py'))
     # Vendor postbuild tools write into their own installation directory.
     data = work / 'arduino'
     shutil.copytree('/opt/arduino', data)
@@ -43,6 +44,7 @@ def build(work):
     output = work / 'build'
     includes = ' '.join(f'-I{sketch}/src/{name}' for name in (
         'easylogger', 'easylogger/inc', 'ble', 'wifi', 'esp_lib', 'erpc', 'erpc_shim', 'mDNS'))
+    includes += f' -I{core}/system/libameba/sdk/component/common/network/sntp'
     includes += f' -DWIFI_COUNTRY=RTW_COUNTRY_{country}'
     with Path('/dist/build.log').open('w') as log:
         result = subprocess.run(['arduino-cli', 'compile', '--fqbn', LOCK['board'],
@@ -79,8 +81,8 @@ def build(work):
     hashes = {name: hashlib.sha256((firmware / name).read_bytes()).hexdigest() for name in IMAGES}
     manifest = dict(LOCK, git_revision=os.environ['FW_REVISION'],
         dirty=os.environ['FW_DIRTY'] == 'true', firmware_version='3.3.0+rtl8720.1',
-        firmware_protocol='NINA SPI phase 3 (protocol and station Wi-Fi)', country=country,
-        certificate_bundle_sha256=None, artifacts=hashes,
+        firmware_protocol='NINA SPI phase 5 (verified TLS)', country=country,
+        certificate_bundle_sha256=hashlib.sha256((sketch / 'certificates/roots.pem').read_bytes()).hexdigest(), artifacts=hashes,
         sizes=sizes,
         system_packages_sha256=hashlib.sha256(Path('/opt/fw-tools/system-packages.lock').read_bytes()).hexdigest(),
         python_packages=subprocess.check_output(['pip3', 'freeze', '--local'], text=True).splitlines(),

@@ -48,3 +48,10 @@ int main(void) {
     assert(nina_sockets_allocate() == 0); nina_sockets_close_all();
     puts("Production socket backend: live TCP stream/EOF and UDP datagram round trips passed");
 }
+
+void *nina_tls_open(const char *name, uint16_t port, int *fd, uint8_t peer[4]) {
+    (void)name; (void)port; (void)fd; (void)peer; return NULL;
+}
+void nina_tls_free(void *t) { (void)t; }
+int nina_tls_send(void *t, const uint8_t *data, size_t n) { (void)t; (void)data; (void)n; return -1; }
+int nina_tls_recv(void *t, uint8_t *data, size_t n, bool peek) { (void)t; (void)data; (void)n; (void)peek; return -1; }

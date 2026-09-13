@@ -1,0 +1,14 @@
+{
+  "mozilla_source": "https://hg.mozilla.org/projects/nss/file/tip/lib/ckfw/builtins/certdata.txt",
+  "source_url": "https://curl.se/ca/cacert-2026-08-13.pem",
+  "source_date": "2026-08-13",
+  "input_sha256": "f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9",
+  "roots": [
+    "ISRG Root X1",
+    "DigiCert Global Root G2",
+    "GlobalSign Root CA - R3",
+    "Amazon Root CA 1"
+  ],
+  "pem_sha256": "2fc2cf6fa32867366e335c542ef0da9c52e031d8985d3a1fa9a7178305692b3e",
+  "generation_command": "python3 tools/update-certificates.py INPUT.pem --source-url https://curl.se/ca/cacert-2026-08-13.pem --source-date 2026-08-13 --sha256 f66dff1bdf8f96060b8177976f8b7d9254bc89bc4db933d769f7384d28480bc9"
+}

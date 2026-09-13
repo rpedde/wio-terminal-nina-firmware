@@ -13,3 +13,7 @@ DNS_TEST_HOST = "example.com"
 HTTP_TEST_HOST = "example.com"
 NTP_TEST_HOST = "pool.ntp.org"
 SOCKET_CYCLES = 100
+
+# Phase 5 verified HTTPS target and TLS reuse count.
+TLS_TEST_HOST = "sha256.badssl.com"
+TLS_CYCLES = 100
