@@ -16,6 +16,9 @@ def run(*args, **kwargs):
 
 
 def build(work):
+    heap_diagnostics = os.environ.get('NINA_HEAP_DIAGNOSTICS', '0')
+    if heap_diagnostics not in ('0', '1'):
+        raise RuntimeError('NINA_HEAP_DIAGNOSTICS must be 0 or 1')
     country = os.environ.get('WIFI_COUNTRY', 'US')
     if country not in ('US', 'CA', 'GB', 'DE', 'FR', 'AU', 'JP'):
         raise RuntimeError('WIFI_COUNTRY must be US, CA, GB, DE, FR, AU, or JP')
@@ -45,6 +48,8 @@ def build(work):
     includes = ' '.join(f'-I{sketch}/src/{name}' for name in (
         'easylogger', 'easylogger/inc', 'ble', 'wifi', 'esp_lib', 'erpc', 'erpc_shim', 'mDNS'))
     includes += f' -I{core}/system/libameba/sdk/component/common/network/sntp'
+    if heap_diagnostics == '1':
+        includes += ' -DNINA_HEAP_DIAGNOSTICS=1'
     includes += f' -DWIFI_COUNTRY=RTW_COUNTRY_{country}'
     with Path('/dist/build.log').open('w') as log:
         result = subprocess.run(['arduino-cli', 'compile', '--fqbn', LOCK['board'],
@@ -82,6 +87,7 @@ def build(work):
     manifest = dict(LOCK, git_revision=os.environ['FW_REVISION'],
         dirty=os.environ['FW_DIRTY'] == 'true', firmware_version='3.3.0+rtl8720.1',
         firmware_protocol='NINA SPI phase 5 (verified TLS)', country=country,
+        heap_diagnostics=heap_diagnostics == '1',
         certificate_bundle_sha256=hashlib.sha256((sketch / 'certificates/roots.pem').read_bytes()).hexdigest(), artifacts=hashes,
         sizes=sizes,
         system_packages_sha256=hashlib.sha256(Path('/opt/fw-tools/system-packages.lock').read_bytes()).hexdigest(),

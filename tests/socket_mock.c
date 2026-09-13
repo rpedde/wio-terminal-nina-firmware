@@ -5,6 +5,7 @@ static int incoming = -2, partial = 7, failure;
 static unsigned opened, closed, sent_bytes;
 static uint32_t now;
 static bool held[4];
+void nina_socket_heap_trace(void) {}
 bool nina_socket_backend_init(void) { return true; }
 void nina_socket_lock(unsigned id) { assert(!held[id]); held[id] = true; }
 void nina_socket_unlock(unsigned id) { assert(held[id]); held[id] = false; }

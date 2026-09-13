@@ -7,6 +7,15 @@
 #include "nina_sockets.h"
 #include <string.h>
 #include <errno.h>
+#ifdef NINA_HEAP_DIAGNOSTICS
+#include <stdio.h>
+#endif
+void nina_socket_heap_trace(void) {
+#ifdef NINA_HEAP_DIAGNOSTICS
+    printf("NINA_HEAP free=%d minimum=%d\n",
+        (int)xPortGetFreeHeapSize(), (int)xPortGetMinimumEverFreeHeapSize());
+#endif
+}
 static SemaphoreHandle_t locks[NINA_MAX_SOCKETS];
 bool nina_socket_backend_init(void) {
     for (unsigned i = 0; i < NINA_MAX_SOCKETS; ++i) {

@@ -543,7 +543,9 @@ See `PHASE4.md` for results and remaining broader acceptance coverage.
 
 Gate: trusted HTTPS succeeds and both untrusted and mismatched certificates fail.
 Passed on 2026-09-13 with stock CircuitPython 10.3.0 and ESP32SPI 11.1.4;
-expired certificates are also rejected. See `PHASE5.md` for exact coverage.
+expired certificates are also rejected. Follow-up physical power-cycle HTTPS
+and RTL heap checks pass: 100 HTTPS cycles and 30 certificate failures leave
+zero post-warm-up heap loss. See `PHASE5.md` for exact coverage.
 
 ### Phase 6: Cleanup
 

@@ -76,6 +76,11 @@ DNS server addresses normally come from DHCP. Run
 `tests/hardware/phase5_tls.py` for verified HTTPS. TLS requires a hostname,
 SNTP time and a chain to an included root; only one TLS socket is supported.
 
+Optional runtime RTL heap measurements use
+`NINA_HEAP_DIAGNOSTICS=1 ./fw build` and
+`tests/hardware/phase5_heap.py`; see [PHASE5.md](plans/PHASE5.md).
+Ordinary builds default to diagnostics disabled.
+
 `./fw shell` opens a disposable toolchain shell. `./fw clean` moves `dist/`
 into a recoverable, ignored `.dist-backup.*` directory and prints its location.
 

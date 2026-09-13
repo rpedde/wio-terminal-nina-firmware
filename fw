@@ -79,4 +79,5 @@ revision=$(git -C "$root" rev-parse HEAD)
 dirty=false
 [[ -z $(git -C "$root" status --porcelain --untracked-files=normal) ]] || dirty=true
 exec docker run "${args[@]}" -e "FW_REVISION=$revision" -e "FW_DIRTY=$dirty" \
+    -e "NINA_HEAP_DIAGNOSTICS=${NINA_HEAP_DIAGNOSTICS:-0}" \
     -e "WIFI_COUNTRY=${WIFI_COUNTRY:-US}" "$image" "$command"

@@ -110,6 +110,81 @@ The final production image also passes:
   resets, and 10,000 mixed requests in 38.397 seconds, without retries or errors.
 - `dist/phase5-release-pins-console.txt`: test pins released after acceptance.
 
-Runtime free-heap trends and a physical power-cycle test remain separate from
-the required trusted/untrusted/hostname gate. Logic-analyzer capture remains
-deferred under the existing Phase 2 decision.
+The follow-up below completes runtime heap measurement and the physical
+power-cycle check. Logic-analyzer capture remains deferred under the existing
+Phase 2 decision.
+
+## Follow-up power-cycle and heap validation
+
+The user confirmed removing all power for at least ten seconds and reconnecting
+on 2026-09-13. The previously accepted production firmware then synchronized
+SNTP and completed a verified HTTPS request to `sha256.badssl.com` (765 bytes),
+with socket capacity checks before and after. See
+`dist/phase5-power-cycle-console.txt` and the preserved production manifest in
+`dist/phase5-production-before-heap/build-manifest.json`.
+
+Heap instrumentation is explicitly opt-in:
+
+```sh
+./fw image
+NINA_HEAP_DIAGNOSTICS=1 ./fw build
+./fw flash-rtl --port /dev/ttyACM0
+# Restore the supplied CircuitPython UF2, then run phase5_heap.py via raw REPL.
+python3 tools/analyze-heap-log.py dist/phase5-heap-console.txt \
+    --output dist/phase5-heap-results.json
+```
+
+`NINA_HEAP_DIAGNOSTICS` accepts only 0 or 1, defaults to 0, and is recorded as
+`heap_diagnostics` in the manifest. When enabled, existing status requests
+emit current and minimum-ever FreeRTOS heap on the dedicated RTL LOG UART.
+The NINA wire response stays unchanged; no additional command is introduced.
+The test reads that UART using `board.RTL_RXD`/`board.RTL_TXD`, and prints only
+heap records, excluding other vendor log content. The SDK's tiny formatter
+requires `%d`; `%u` does not print numeric values.
+
+The test measures before/while/after the first TLS connection, warms up ten
+connections, then measures after each of 100 verified HTTPS cycles and after
+ten batches of three certificate failures. It checks HTTPS recovery and waits
+130 seconds for asynchronous network cleanup. The predeclared allowance is at
+most 1 KiB of final loss against the warm baseline. Minimum-ever heap describes
+the entire boot/run and is not a TLS-only peak. These are RTL heap readings,
+not CircuitPython heap measurements; they do not include separate static pools.
+
+### Measured results (2026-09-13)
+
+Both follow-up gates passed. `dist/phase5-heap-console.txt` contains all 138
+samples; `dist/phase5-heap-results.json` contains the checked summary and samples.
+The instrumented images and their manifest are preserved under
+`dist/phase5-heap-artifacts/`.
+
+| Measurement | RTL free heap (bytes) |
+| --- | ---: |
+| Before first TLS connection | 82,464 |
+| First TLS connection open | 36,128 |
+| First TLS connection closed | 82,048 |
+| Warm baseline after ten connections | 82,048 |
+| After each of 100 measured HTTPS cycles | 82,048 |
+| After each batch of three certificate rejections (30 total) | 82,048 |
+| After HTTPS recovery and 130 seconds settling | 82,048 |
+| Minimum-ever free heap observed | 29,984 |
+
+The initial retained difference was 416 bytes. Post-warm-up loss was **zero
+bytes**, including after certificate failures; the first-ten and last-ten
+post-close medians were both 82,048 bytes. No progressive loss was observed
+within this run. All socket-capacity and HTTPS recovery checks passed.
+
+The cold-start production test fetched 765 HTTPS bytes after the user-confirmed
+power removal. This was distinct from the earlier automated RTL reset tests.
+The heap measurements used instrumentation, and do not claim to measure every
+possible certificate chain, workload, static buffer or allocator.
+
+All 57 original CircuitPython files match the pre-test backup, excluding only
+generated `boot_out.txt`; see `dist/phase5-heap-file-preservation.json`.
+The normal image was rebuilt and restored with `heap_diagnostics: false`;
+its ELF contains no heap-log format string. Stock CircuitPython was restored
+and verified HTTPS again fetched 765 bytes with full socket capacity.
+Production restoration and its final HTTPS result are recorded in
+`dist/phase5-post-heap-production-flash.log` and
+`dist/phase5-post-heap-production-console.txt`; the installed manifest is
+`dist/phase5-post-heap-production-manifest.json`. The nine native tests and
+artifact checks pass; `git diff --check` is clean.

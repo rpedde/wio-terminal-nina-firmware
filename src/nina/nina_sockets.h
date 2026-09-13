@@ -3,6 +3,8 @@
 #include "nina_protocol.h"
 /* Backend results: -2 means would-block, -1 fatal, zero TCP EOF. */
 bool nina_socket_backend_init(void);
+/* Optional dedicated-UART heap snapshot; no extra wire protocol command. */
+void nina_socket_heap_trace(void);
 void nina_socket_lock(unsigned id);
 void nina_socket_unlock(unsigned id);
 uint32_t nina_socket_millis(void);

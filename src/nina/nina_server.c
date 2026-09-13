@@ -39,7 +39,7 @@ size_t nina_server_reply(const uint8_t *data, size_t length, uint8_t *out,
     case 0x15: value[0] = nina_wifi_set_dns(r.params[1].data, r.params[2].data); break;
     case 0x16:
         text_param(name, &r.params[0]); value[0] = nina_wifi_set_hostname(name); break;
-    case 0x20: value[0] = nina_wifi_status(); break;
+    case 0x20: value[0] = nina_wifi_status(); nina_socket_heap_trace(); break;
     case 0x21:
         nina_wifi_address(value, value + 4, value + 8);
         count = 3;
