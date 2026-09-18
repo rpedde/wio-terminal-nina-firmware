@@ -1,15 +1,21 @@
-# Seeed RTL872X RPC firmware  [![Build Status](https://travis-ci.com/Seeed-Studio/seeed-ambd-firmware.svg?branch=master)](https://travis-ci.com/Seeed-Studio/seeed-ambd-firmware)
+# NINA SPI Wi-Fi firmware for Wio Terminal
 
-## Docker workflow and NINA Wi-Fi/TCP/UDP/TLS
+This firmware turns the Wio Terminal's RTL8720DN into a NINA-compatible Wi-Fi
+coprocessor for stock CircuitPython. It replaces the original Seeed eRPC
+service with 8 MHz SPI, station Wi-Fi, TCP, UDP and certificate-verified HTTPS.
 
-The NINA port in [TODO.md](plans/TODO.md) now implements the portable protocol
-and station Wi-Fi, TCP/UDP sockets, SNTP and certificate-verified TLS.
-Phase 3/4 acceptance is tracked in [PHASE3.md](plans/PHASE3.md) and
-[PHASE4.md](plans/PHASE4.md); TLS details and acceptance are in
-[PHASE5.md](plans/PHASE5.md).
-Phase 2 transport acceptance remains recorded in [PHASE2.md](plans/PHASE2.md),
-with logic-analyzer capture deferred by user decision.
-The phase 1 baseline record remains in [PHASE1.md](plans/PHASE1.md).
+The compatibility target is stock CircuitPython for `seeeduino_wio_terminal`
+and unmodified Adafruit ESP32SPI **11.1.4**, using Adafruit NINA firmware 3.3.0
+as the protocol reference. Hardware acceptance used CircuitPython **10.3.0**.
+The firmware reports `3.3.0+rtl8720.1`; this is its protocol version string,
+not a claim that the ESP32 firmware runs on Realtek hardware.
+
+Phase 6 source cleanup and regression status are tracked in
+[PHASE6.md](plans/PHASE6.md). Earlier hardware evidence is in
+[Phase 3](plans/PHASE3.md), [Phase 4](plans/PHASE4.md) and
+[Phase 5](plans/PHASE5.md). The first versioned release is still pending.
+
+## Build and flash
 
 On Linux with Docker, Bash, Git and standard coreutils:
 
@@ -40,7 +46,7 @@ FR, AU, and JP. Changing the country requires rebuilding and reflashing.
 
 `./fw test` runs workflow checks, native protocol/dispatcher/transport tests
 and fuzz cases under ASan/UBSan, and validates completed build artifacts.
-Hardware tests require the separate procedure in PHASE3.md. CI also builds the image and firmware
+Hardware tests require a connected Wio and the procedures below. CI also builds the image and firmware
 and checks that tracked sources remain unchanged.
 
 To flash a connected Wio Terminal, explicitly choose its serial device:
@@ -91,60 +97,99 @@ System-package drift causes image creation to fail against
 and repeat the baseline build/flash tests. Archive checksums for Seeed compiler,
 postbuild tools, and Arduino builtins originate from their package indexes;
 CLI/core/flasher archive checksums were measured from the pinned downloads.
-The unmodified vendor code retains its original licensing and attribution.
+See [THIRD_PARTY.md](THIRD_PARTY.md) for licensing and attribution.
 
-## Introduction
 
-This RTL87XX [RPC](https://github.com/EmbeddedRPC/eRPC) firmware export a RPC server interface through hardware SPI/UART port to MCU.  
+## CircuitPython HTTPS example
 
-## How to compile 
-### Tools 
-The arduino-cli tool is used to build and upload the RTL8720DN firmware to the Seeed Wio terminal board. Use following link for download and installation procedure:
-* [Arduino CLI](https://arduino.github.io/arduino-cli/installation/).
+After restoring CircuitPython, copy the CircuitPython-compatible ESP32SPI
+11.1.4 package to `CIRCUITPY/lib/adafruit_esp32spi/`. Copy
+[settings.toml.example](examples/settings.toml.example) to
+`CIRCUITPY/settings.toml`, set your Wi-Fi credentials, and copy
+[https.py](examples/https.py) to `CIRCUITPY/code.py`.
+The example uses only the stock driver and CircuitPython modules, waits for
+SNTP, and prints a verified HTTPS response. Its initialization is:
 
-Sample script is below:
-```sh
-wget https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh
-chmod a+x install.sh
-sudo BINDIR=/usr/local/bin ./install.sh
-sudo rm -rf ~/.arduino15
-arduino-cli config init
+```python
+import board
+import busio
+import digitalio
+from adafruit_esp32spi import adafruit_esp32spi
+
+spi = busio.SPI(board.RTL_CLK, MOSI=board.RTL_MOSI, MISO=board.RTL_MISO)
+cs = digitalio.DigitalInOut(board.RTL_CS)
+ready = digitalio.DigitalInOut(board.RTL_READY)
+reset = digitalio.DigitalInOut(board.RTL_PWR)
+esp = adafruit_esp32spi.ESP_SPIcontrol(spi, cs, ready, reset)
 ```
 
-### ArduinoCore
-Before compiling the firmware, you need to install the Arduino core of rtl872x [ArduinoCore-ambd](https://github.com/Seeed-Studio/ArduinoCore-ambd/)
-- board index
-```
-https://files.seeedstudio.com/arduino/package_realtek.com_amebad_index.json
-```
+`RTL_DIR` is unused and must remain an input. Do not initialize an eRPC UART
+on the SPI pins. The stock driver handles the active-low READY handshake.
 
-Sample script is below:
-```sh
-arduino-cli config add board_manager.additional_urls https://files.seeedstudio.com/arduino/package_realtek.com_amebad_index.json
-arduino-cli core update-index
-arduino-cli core install realtek:AmebaD
-rm -rf ~/.arduino15/packages/realtek/hardware/AmebaD/3.0.5
-git clone https://github.com/Seeed-Studio/ArduinoCore-ambd ~/.arduino15/packages/realtek/hardware/AmebaD/3.0.5
-```
+## Supported commands and limits
 
-### build
-```sh
-./arduino-build.sh --build
-```
+| Commands | Behavior |
+| --- | --- |
+| `10`, `11` | Open and WPA/WPA2 station connection |
+| `14`–`16` | Static IPv4, DNS servers, DHCP hostname |
+| `20`–`27` | Connection, addressing, MAC, SSID, BSSID, RSSI, security, scan results |
+| `28` | UDP bind; TCP server mode returns failure |
+| `2a`–`2f` | Send status, available/read, TCP/UDP/TLS connect, close, client state |
+| `30` | Disconnect and release all sockets |
+| `32`, `33`, `36`, `3c`, `3d` | Scan RSSI, security, start, BSSID, channel |
+| `34`, `35` | DNS lookup and cached IPv4 result |
+| `37` | Firmware version |
+| `39`, `3a` | Send accumulated UDP datagram and remote endpoint |
+| `3b`, `3e`, `3f` | Unix time, ping, allocate socket |
+| `44`–`46` | Stream write, buffered read, UDP accumulation |
 
-### flash
+Command IDs are hexadecimal. Unsupported commands return a NINA error frame.
+The complete wire contract is in [TODO.md](plans/TODO.md).
 
-```sh
-chmod +x build.sh
-./build.sh --flash /dev/tty***
-````
+There are four socket slots, with at most one TLS context. SPI frames are
+limited to 4092 bytes, response data and accumulated UDP datagrams to 4084
+bytes. Larger stream transfers require multiple requests. TLS requires a
+hostname, synchronized time and a chain to one of the four checked-in roots;
+IP-only TLS is rejected. The root selection is deliberately smaller than a
+browser trust store. See [certificate details](certificates/README.md).
 
------
-This software RPC server section is written by Seeed Studio
-and is licensed under The MIT License. Check License.txt for more information.
+AP mode, TCP servers, enterprise Wi-Fi, BLE/HCI, mDNS RPC, GPIO proxy,
+filesystem commands, OTA, client certificates and low-level BSD commands
+`70`–`7f` are not implemented. Open-network support exists but separate
+open-AP hardware acceptance remains unrun. Direct DHCP hostname-option
+inspection and logic-analyzer timing capture also remain unrun; the latter
+was explicitly deferred in [Phase 2](plans/PHASE2.md).
 
-Contributing to this software is warmly welcomed. You can do this basically by
-forking, committing modifications and then pulling requests (follow the links above
-for operating guide). Adding change log and your contact into file header is encouraged.
-Thanks for your contribution.
+## Validation and troubleshooting
 
+Run `./fw test` after a clean build for native ASan/UBSan tests and artifact
+checks. On a Wio with the stock library and the hardware settings example,
+run these scripts via REPL, releasing pins or soft-reloading between scripts:
+
+- `tests/hardware/phase2_transport.py`: 100 version reads, 20 resets, 10,000 requests.
+- `tests/hardware/phase3_wifi.py` and `phase3_recovery.py`: Wi-Fi and recovery.
+- `tests/hardware/phase4_sockets.py`: HTTP, UDP NTP, capacity and 100 TCP cycles.
+- `tests/hardware/phase5_tls.py`: verified HTTPS, certificate rejection and 100 TLS cycles.
+
+For a READY timeout, confirm CircuitPython was restored after flashing, check
+the six RTL pin names, and reset the board. Stop other code using the same SPI
+pins. For intermittent corruption or clock-dependent failures, revisit the
+deferred logic-analyzer capture before changing timing.
+
+For HTTPS failure, check plain TCP/DNS connectivity, SNTP access (UDP 123),
+the hostname, included root and certificate validity. `esp.get_time()` on
+11.1.4 returns a one-element tuple and raises while time is unavailable.
+TLS fails securely if time cannot synchronize; do not disable verification.
+Close sockets in `finally` blocks to avoid exhausting the four slots.
+
+For Docker access errors, ensure your user can access the Docker daemon.
+For flash errors after USB re-enumeration, identify the new explicit serial
+port and retry. Build details are in `dist/build.log`; sizes and hashes are
+in `dist/size.json` and `dist/build-manifest.json`.
+
+## License
+
+Project code is MIT unless a file identifies another license. Original Seeed
+copyrights are preserved. The refactored TLS adapter has Apache-2.0 provenance;
+the Mozilla-derived root data is MPL-2.0. See [LICENSE](LICENSE),
+[THIRD_PARTY.md](THIRD_PARTY.md) and [licenses/](licenses/).

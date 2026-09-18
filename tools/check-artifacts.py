@@ -1,4 +1,4 @@
-"""Validate a completed baseline build, including checksums and ownership."""
+"""Validate a completed firmware build, including checksums and ownership."""
 import hashlib
 import json
 import os

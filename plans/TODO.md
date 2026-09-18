@@ -549,12 +549,16 @@ zero post-warm-up heap loss. See `PHASE5.md` for exact coverage.
 
 ### Phase 6: Cleanup
 
-- Remove eRPC, generated RPC shims, BLE RPC, duplicate generated trees, PowerShell generators, and obsolete build scripts from the active project.
-- Remove RPC types from reusable Wi-Fi code.
-- Update licensing and attribution.
-- Rewrite the README around NINA compatibility, Docker workflow, flashing, CircuitPython restoration, example code, supported commands, limitations, and troubleshooting.
+- [x] Remove eRPC, generated RPC shims, BLE RPC, duplicate generated trees, PowerShell generators, and obsolete build scripts from the active project.
+- [x] Remove RPC types from reusable Wi-Fi code.
+- [x] Update licensing and attribution.
+- [x] Rewrite the README around NINA compatibility, Docker workflow, flashing, CircuitPython restoration, example code, supported commands, limitations, and troubleshooting.
 
 Gate: all native, container, and hardware acceptance tests still pass after removal.
+Passed on 2026-09-17: native/container, Wi-Fi, TCP/UDP, verified TLS, transport,
+zero post-warm-up heap loss and physical cold-start HTTPS regressions.
+Production firmware and CircuitPython are restored. Existing coverage
+deferrals and diagnostic interruptions are recorded in `PHASE6.md`.
 
 ### Phase 7: Release artifact
 

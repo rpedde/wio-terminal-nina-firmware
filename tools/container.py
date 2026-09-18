@@ -45,9 +45,7 @@ def build(work):
     os.environ['ARDUINO_DIRECTORIES_DOWNLOADS'] = str(work / 'downloads')
     os.environ['ARDUINO_DIRECTORIES_USER'] = str(work / 'user')
     output = work / 'build'
-    includes = ' '.join(f'-I{sketch}/src/{name}' for name in (
-        'easylogger', 'easylogger/inc', 'ble', 'wifi', 'esp_lib', 'erpc', 'erpc_shim', 'mDNS'))
-    includes += f' -I{core}/system/libameba/sdk/component/common/network/sntp'
+    includes = f'-I{core}/system/libameba/sdk/component/common/network/sntp'
     if heap_diagnostics == '1':
         includes += ' -DNINA_HEAP_DIAGNOSTICS=1'
     includes += f' -DWIFI_COUNTRY=RTW_COUNTRY_{country}'
@@ -86,7 +84,7 @@ def build(work):
     hashes = {name: hashlib.sha256((firmware / name).read_bytes()).hexdigest() for name in IMAGES}
     manifest = dict(LOCK, git_revision=os.environ['FW_REVISION'],
         dirty=os.environ['FW_DIRTY'] == 'true', firmware_version='3.3.0+rtl8720.1',
-        firmware_protocol='NINA SPI phase 5 (verified TLS)', country=country,
+        firmware_protocol='NINA SPI (verified TLS)', country=country,
         heap_diagnostics=heap_diagnostics == '1',
         certificate_bundle_sha256=hashlib.sha256((sketch / 'certificates/roots.pem').read_bytes()).hexdigest(), artifacts=hashes,
         sizes=sizes,

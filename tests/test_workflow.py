@@ -1,4 +1,4 @@
-"""Baseline workflow checks. Protocol/backend/hardware tests are later gates."""
+"""Firmware workflow checks; protocol and backend tests live alongside these."""
 import json
 import os
 from pathlib import Path
