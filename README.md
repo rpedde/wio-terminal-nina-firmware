@@ -1,5 +1,11 @@
 # wio-terminal-nina-firmware
 
+> [!WARNING]
+> This repository is **100% vibe coded**. It works well for me, but there are
+> **no guarantees of anything**—including correctness, reliability, fitness for
+> any particular purpose, or not starting random things on fire. Use at your
+> own risk.
+
 This firmware turns the Wio Terminal's RTL8720DN into a NINA-compatible Wi-Fi
 coprocessor for stock CircuitPython. It replaces the original Seeed eRPC
 service with 8 MHz SPI, station Wi-Fi, TCP, UDP and certificate-verified HTTPS.
