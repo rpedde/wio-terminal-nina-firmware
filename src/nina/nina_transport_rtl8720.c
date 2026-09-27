@@ -11,7 +11,7 @@
 #define NINA_TRACE(...) ((void)0)
 #endif
 
-/* Wio Terminal schematic v1.2, sheet 6; see PHASE2.md. */
+/* Wio Terminal schematic v1.2, sheet 6. */
 #define NINA_CLK _PA_30
 #define NINA_MOSI _PA_25
 #define NINA_MISO _PA_26

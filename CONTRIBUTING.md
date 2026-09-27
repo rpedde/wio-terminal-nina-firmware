@@ -1,6 +1,6 @@
 # Contributing
 
-Keep changes within the compatibility contract in [plans/TODO.md](plans/TODO.md).
+Keep changes within the compatibility contract in [SUPPORTED_COMMANDS.md](SUPPORTED_COMMANDS.md).
 Use the pinned Docker toolchain; do not silently update the SDK or roots.
 Describe the concrete behavior change and validation in each contribution.
 

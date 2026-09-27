@@ -16,7 +16,6 @@
 | `44`–`46` | Stream write, buffered read, UDP accumulation |
 
 Command IDs are hexadecimal. Unsupported commands return a NINA error frame.
-The complete wire contract is in [TODO.md](plans/TODO.md).
 
 There are four socket slots, with at most one TLS context. SPI frames are
 limited to 4092 bytes, response data and accumulated UDP datagrams to 4084
@@ -30,5 +29,5 @@ filesystem commands, OTA, client certificates and low-level BSD commands
 `70`–`7f` are not implemented. Open-network support exists but separate
 open-AP hardware acceptance remains unrun. Direct DHCP hostname-option
 inspection and logic-analyzer timing capture also remain unrun; the latter
-was explicitly deferred in [Phase 2](plans/PHASE2.md).
+was explicitly deferred during hardware acceptance.
 

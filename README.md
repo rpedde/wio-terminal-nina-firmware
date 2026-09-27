@@ -10,12 +10,87 @@ as the protocol reference. Hardware acceptance used CircuitPython **10.3.0**.
 The firmware reports `3.3.0+rtl8720.1`; this is its protocol version string,
 not a claim that the ESP32 firmware runs on Realtek hardware.
 
-Phase 6 source cleanup and regression status are tracked in
-[PHASE6.md](plans/PHASE6.md). Earlier hardware evidence is in
-[Phase 3](plans/PHASE3.md), [Phase 4](plans/PHASE4.md) and
-[Phase 5](plans/PHASE5.md). Release packaging is documented in [RELEASING.md](RELEASING.md).
+## Install on a Wio Terminal
 
-## Build and flash
+Use the **prebuilt firmware** from [GitHub Releases](https://github.com/rpedde/wio-terminal-nina-firmware/releases).
+The release archive contains firmware for the **RTL8720DN Wi-Fi coprocessor**.
+It is not a CircuitPython UF2 for the SAMD51. Flashing temporarily replaces the
+SAMD51 program with a bridge, so back up your `CIRCUITPY` files first.
+
+You need a Wio Terminal, a USB data cable, a Linux x86-64 computer with Docker,
+Git and standard command-line tools, a stock Wio Terminal CircuitPython UF2,
+and the CircuitPython-compatible **Adafruit ESP32SPI 11.1.4** library. The
+hardware tests used CircuitPython **10.3.0**. The prebuilt firmware uses the
+US Wi-Fi country plan; other countries require a [source build](#build-from-source).
+
+### 1. Download and verify the firmware
+
+Download `wio-terminal-nina-firmware-v0.1.0.tar.gz` and its `.sha256` sidecar
+from the [v0.1.0 release](https://github.com/rpedde/wio-terminal-nina-firmware/releases/tag/v0.1.0)
+into the same directory, then run:
+
+```sh
+sha256sum -c wio-terminal-nina-firmware-v0.1.0.tar.gz.sha256
+```
+
+Get the matching flashing tools and unpack the release into `dist/`:
+
+```sh
+git clone --branch v0.1.0 --depth 1 https://github.com/rpedde/wio-terminal-nina-firmware.git
+cd wio-terminal-nina-firmware
+mkdir -p dist
+tar -xzf ../wio-terminal-nina-firmware-v0.1.0.tar.gz --strip-components=1 -C dist
+(cd dist && sha256sum -c SHA256SUMS)
+./fw image
+```
+
+These commands assume you cloned beside the downloaded archive. Adjust its
+path if needed. Docker downloads the pinned flashing toolchain; you do not
+need to install Arduino, ARM compilers or Python on the host.
+
+### 2. Flash the Wi-Fi coprocessor
+
+Connect the Wio Terminal by USB and identify its serial port. Substitute that
+port below; do not assume it is always `/dev/ttyACM0`.
+
+```sh
+./fw flash-rtl --port /dev/ttyACM0
+```
+
+This flashes the three supplied RTL images. Erasing first is unnecessary.
+Only the selected serial device is exposed to the container. If the USB port
+changes during the temporary bridge installation, identify the new port and
+rerun with that explicit device. See [troubleshooting](#validation-and-troubleshooting)
+if flashing fails.
+
+### 3. Restore CircuitPython
+
+After flashing, enter the Wio Terminal's SAMD51 UF2 bootloader by quickly
+operating the reset switch twice. When the `WIO_TERMINAL` volume appears,
+copy your stock Wio Terminal CircuitPython UF2 onto it, or use:
+
+```sh
+./fw install-circuitpython --mount /path/to/WIO_TERMINAL --uf2 /path/to/circuitpython.uf2
+```
+
+Wait for the board to restart and the `CIRCUITPY` drive to appear. Restoring
+CircuitPython on the SAMD51 leaves the new RTL Wi-Fi firmware installed.
+
+### 4. Connect and try HTTPS
+
+- Copy the CircuitPython-compatible ESP32SPI **11.1.4** package to
+  `CIRCUITPY/lib/adafruit_esp32spi/`.
+- Copy [examples/settings.toml.example](examples/settings.toml.example) to
+  `CIRCUITPY/settings.toml` and fill in your Wi-Fi credentials.
+- Copy [examples/https.py](examples/https.py) to `CIRCUITPY/code.py`.
+- Open the CircuitPython serial console. The example connects to Wi-Fi,
+  waits for SNTP time, and prints a certificate-verified HTTPS response.
+
+No CircuitPython fork or custom transport shim is required. See the
+[command matrix and limits](SUPPORTED_COMMANDS.md) for supported features,
+TLS root coverage and outstanding hardware test deferrals.
+
+## Build from source
 
 On Linux with Docker, Bash, Git and standard coreutils:
 
@@ -63,7 +138,7 @@ downloads firmware. The wrapper fixes upstream port detection/error reporting
 without broadening device access. USB re-enumeration may invalidate Docker's
 device mapping or change the port. If so, stop, identify the board's current
 port, and rerun with that explicit device; do not use `--privileged` or expose
-all of `/dev`. The baseline flash workflow passed on physical hardware (see PHASE1.md).
+all of `/dev`. The flash workflow has been validated on physical hardware.
 
 The SAMD51 may now contain Seeed's temporary bridge. Enter its UF2 bootloader
 and restore your explicitly supplied CircuitPython UF2:
@@ -84,13 +159,14 @@ SNTP time and a chain to an included root; only one TLS socket is supported.
 
 Optional runtime RTL heap measurements use
 `NINA_HEAP_DIAGNOSTICS=1 ./fw build` and
-`tests/hardware/phase5_heap.py`; see [PHASE5.md](plans/PHASE5.md).
+`tests/hardware/phase5_heap.py`.
 Ordinary builds default to diagnostics disabled.
 
 `./fw shell` opens a disposable toolchain shell. `./fw clean` moves `dist/`
 into a recoverable, ignored `.dist-backup.*` directory and prints its location.
 
 Dependency pins and source URLs are in [tools/toolchain.lock.json](tools/toolchain.lock.json).
+Ubuntu packages come from the fixed `20260912T040000Z` snapshot.
 System-package drift causes image creation to fail against
 `tools/system-packages.lock`; Python wheels are version- and hash-locked in
 `tools/requirements.lock`. Update these only as an explicit maintenance change
@@ -157,6 +233,12 @@ For Docker access errors, ensure your user can access the Docker daemon.
 For flash errors after USB re-enumeration, identify the new explicit serial
 port and retry. Build details are in `dist/build.log`; sizes and hashes are
 in `dist/size.json` and `dist/build-manifest.json`.
+
+## Development and releases
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for development checks,
+[CHANGELOG.md](CHANGELOG.md) for releases and [RELEASING.md](RELEASING.md)
+for archive generation and GitHub automation.
 
 ## License
 

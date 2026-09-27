@@ -56,6 +56,8 @@ class WorkflowTests(unittest.TestCase):
         lock = json.loads((ROOT / 'tools/toolchain.lock.json').read_text())
         self.assertEqual(lock['board_package_version'], '3.0.5')
         self.assertIn('@sha256:', lock['ubuntu'])
+        self.assertRegex(lock['ubuntu_snapshot'], r'^[0-9]{8}T[0-9]{6}Z$')
+        self.assertIn(lock['ubuntu_snapshot'], (ROOT / 'tools/Dockerfile').read_text())
         for entry in lock['archives'].values():
             self.assertRegex(entry['sha256'], r'^[a-f0-9]{64}$')
             self.assertTrue(entry['url'].startswith('https://'))

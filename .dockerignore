@@ -1,3 +1,5 @@
 *
 !tools/
 !tools/**
+!certificates/
+!certificates/roots.pem

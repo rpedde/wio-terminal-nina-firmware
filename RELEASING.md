@@ -25,7 +25,7 @@ No credentials or local hardware logs are packaged.
 
 Branch pushes and pull requests build firmware and run the native ASan/UBSan
 suite, artifact checks and source-isolation guard. GitHub-hosted runners do
-not run hardware tests; existing coverage and deferrals are in plans/PHASE6.md.
+not run hardware tests; coverage deferrals are in SUPPORTED_COMMANDS.md.
 
 A failed release can be rerun in Actions, or the Release workflow can be
 manually dispatched against the existing tag. An existing published release

@@ -1,4 +1,5 @@
 """Install only checksum-locked archives; no board-manager index refresh."""
+import difflib
 import hashlib
 import json
 from pathlib import Path
@@ -20,6 +21,8 @@ DESTINATIONS = {
 installed = subprocess.check_output(['dpkg-query', '-W', '-f=${Package}=${Version}\n'], text=True)
 expected = Path('/opt/fw-tools/system-packages.lock').read_text()
 if installed.splitlines() != expected.splitlines():
+    print(''.join(difflib.unified_diff(expected.splitlines(True), installed.splitlines(True),
+                                     fromfile='system-packages.lock', tofile='installed')))
     raise SystemExit('System packages changed; explicitly review and update system-packages.lock')
 
 for name, entry in LOCK['archives'].items():

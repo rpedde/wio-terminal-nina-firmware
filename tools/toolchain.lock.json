@@ -3,6 +3,7 @@
   "board": "realtek:AmebaD:ameba_rtl8721d",
   "board_package_version": "3.0.5",
   "ubuntu": "ubuntu:22.04@sha256:281c5745f657873d78e5531fc5ba8575f46ab7769b94550ac99543f122679986",
+  "ubuntu_snapshot": "20260912T040000Z",
   "core_revision": "f81bca75e433e35b2d27cadd178596888940fb5a",
   "flash_revision": "de56db9716f9cbf5641fe6e440b1c96033c41962",
   "arduino_cli_version": "0.35.3",

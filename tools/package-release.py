@@ -44,6 +44,7 @@ def payload(source, dist, version, revision):
         files[name] = (dist / name).read_bytes()
     for name in ('README.md', 'SUPPORTED_COMMANDS.md', 'LICENSE', 'THIRD_PARTY.md',
                  'certificates/README.md', 'certificates/metadata.json',
+                 'tools/toolchain.lock.json',
                  'examples/https.py', 'examples/settings.toml.example',
                  'licenses/Apache-2.0.txt', 'licenses/MPL-2.0.txt',
                  'licenses/LGPL-2.1.txt', 'licenses/SDK-NOTICES.txt'):
