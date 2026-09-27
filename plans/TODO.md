@@ -75,7 +75,7 @@ Create five separable subsystems beneath `src/nina/`:
 
 Keep `src/wifi/` initially, but separate reusable Wi-Fi/lwIP/TLS functions from RPC-specific wrappers. New NINA code must call typed internal functions rather than `rpc_*` functions that expose `binary_t`, retained pointers, or eRPC allocation rules.
 
-The final startup sequence in `seeed-ambd-firmware.ino` must be:
+The final startup sequence in `wio-terminal-nina-firmware.ino` must be:
 
 1. Initialize logging in production-safe mode.
 2. Initialize the Realtek Wi-Fi and TCP/IP stacks.
@@ -562,8 +562,11 @@ deferrals and diagnostic interruptions are recorded in `PHASE6.md`.
 
 ### Phase 7: Release artifact
 
-- Produce a versioned archive containing the three RTL images, build manifest, checksums, release notes, supported-command matrix, and the matching CircuitPython example.
-- Tag the first working release as `v0.1.0`.
+- [x] Produce a versioned archive containing the three RTL images, build manifest, checksums, release notes, supported-command matrix, and the matching CircuitPython example.
+- [x] Tag the first working release as `v0.1.0`.
+
+Release packaging and GitHub automation are documented in [PHASE7.md](PHASE7.md)
+and [RELEASING.md](../RELEASING.md).
 
 ## 13. Completion Criteria
 

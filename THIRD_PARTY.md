@@ -24,3 +24,8 @@ those components' terms. Exact source URLs, revisions and hashes are recorded
 in [toolchain.lock.json](tools/toolchain.lock.json) and the build manifest.
 Before redistributing a toolchain image or release archive, preserve the
 applicable notices from those pinned dependencies alongside the artifacts.
+
+Release archives preserve pinned SDK notices in [SDK-NOTICES.txt](licenses/SDK-NOTICES.txt)
+and the Arduino LGPL-2.1 text in [LGPL-2.1.txt](licenses/LGPL-2.1.txt).
+The exact SDK sources are identified by the manifest and lock file. The build
+recipe in tools/container.py records the linker changes applied to the core.

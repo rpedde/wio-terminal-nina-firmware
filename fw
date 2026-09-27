@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
-image=seeed-ambd-toolchain:baseline-1
+image=wio-terminal-nina-toolchain:1
 fail() { echo "fw: $*" >&2; exit 1; }
 usage() {
     echo 'Usage: ./fw image [--no-cache] | build | test | shell'
     echo '       ./fw flash-rtl --port /dev/ttyACM0'
     echo '       ./fw erase-rtl --port /dev/ttyACM0 --confirm-erase'
     echo '       ./fw install-circuitpython --mount PATH --uf2 FILE'
-    echo '       ./fw clean'
+    echo '       ./fw package vMAJOR.MINOR.PATCH | clean'
 }
 command=${1:-help}
 shift || true
@@ -46,6 +46,9 @@ case "$command" in
             echo "Previous artifacts moved to $backup/dist"
         fi
         exit 0 ;;
+    package)
+        [[ $# == 1 && $1 =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail 'Specify one release tag, e.g. v0.1.0'
+        export FW_RELEASE_VERSION=$1 ;;
     build|test|shell) [[ $# == 0 ]] || fail 'Unexpected arguments' ;;
     flash-rtl|erase-rtl)
         port= confirmed=false
@@ -79,5 +82,6 @@ revision=$(git -C "$root" rev-parse HEAD)
 dirty=false
 [[ -z $(git -C "$root" status --porcelain --untracked-files=normal) ]] || dirty=true
 exec docker run "${args[@]}" -e "FW_REVISION=$revision" -e "FW_DIRTY=$dirty" \
+    -e "FW_RELEASE_VERSION=${FW_RELEASE_VERSION:-}" \
     -e "NINA_HEAP_DIAGNOSTICS=${NINA_HEAP_DIAGNOSTICS:-0}" \
     -e "WIFI_COUNTRY=${WIFI_COUNTRY:-US}" "$image" "$command"

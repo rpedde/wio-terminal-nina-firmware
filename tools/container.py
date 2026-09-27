@@ -25,7 +25,7 @@ def build(work):
     manifest_path = Path('/dist/build-manifest.json')
     if manifest_path.exists():
         manifest_path.replace('/dist/build-manifest.previous.json')
-    sketch = work / 'seeed-ambd-firmware'
+    sketch = work / 'wio-terminal-nina-firmware'
     shutil.copytree('/source', sketch, ignore=shutil.ignore_patterns(
         '.git', '.agents', '.codex', 'dist', '.dist-backup.*', '__pycache__'))
     run('python3', str(sketch / 'tools/check-certificates.py'))
@@ -106,6 +106,9 @@ def main():
     os.chdir(work)
     if command == 'build':
         build(work)
+    elif command == 'package':
+        run('python3', '/source/tools/package-release.py', os.environ['FW_RELEASE_VERSION'],
+            '--source', '/source', '--dist', '/dist')
     elif command == 'shell':
         run('/bin/bash')
     elif command == 'test':
